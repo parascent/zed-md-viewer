@@ -763,6 +763,7 @@ fn main() {
         vim::init(cx);
         theme_selector::init(cx);
         markdown_preview::init(cx);
+        markdown_table_editor::init(cx);
         json_schema_store::init(cx);
         which_key::init(cx);
         title_bar::init(cx);

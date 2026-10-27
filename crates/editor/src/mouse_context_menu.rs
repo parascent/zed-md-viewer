@@ -199,6 +199,22 @@ pub fn deploy_context_menu(
             .and_then(|buffer| buffer.read(cx).language())
             .is_some_and(|language| language.name().as_ref() == "Markdown");
 
+        let clicked_point = point.to_point(&display_map);
+        let table_row_line = |row: u32| -> String {
+            let end = buffer.line_len(multi_buffer::MultiBufferRow(row));
+            buffer
+                .text_for_range(text::Point::new(row, 0)..text::Point::new(row, end))
+                .collect()
+        };
+        // A table is a run of pipe-containing lines whose second line is the
+        // delimiter row; walk up from the clicked line to find the run start.
+        let mut table_run_start = clicked_point.row;
+        while table_row_line(table_run_start.saturating_sub(1)).contains('|') {
+            table_run_start -= 1;
+        }
+        let in_table = table_row_line(clicked_point.row).contains('|')
+            && is_delimiter_like(&table_row_line(table_run_start + 1));
+
         ui::ContextMenu::build(window, cx, |menu, _window, _cx| {
             let builder = menu
                 .on_blur_subscription(Subscription::new(|| {}))
@@ -212,6 +228,12 @@ pub fn deploy_context_menu(
                     ui::utils::reveal_in_file_manager_label(false),
                     Box::new(RevealInFileManager),
                 )
+                .when(in_table, |builder| {
+                    builder.action("Edit Table", Box::new(zed_actions::table::EditTable))
+                })
+                .when(is_markdown && !in_table, |builder| {
+                    builder.action("Insert Table", Box::new(zed_actions::table::NewTable))
+                })
                 .when(is_markdown, |builder| {
                     builder.action("Open Markdown Preview", Box::new(OpenMarkdownPreview))
                 });
@@ -349,4 +371,16 @@ mod tests {
 
         assert!(cx.debug_bounds("MENU_ITEM-Copy").is_some());
     }
+}
+
+/// Cheap check for a markdown table delimiter row (`| --- | :---: |`), used to
+/// decide whether the "Edit Table" context-menu entry applies.
+fn is_delimiter_like(line: &str) -> bool {
+    let trimmed = line.trim().trim_matches('\r');
+    let inner = trimmed.trim().trim_matches('|');
+    !inner.is_empty()
+        && inner.split('|').all(|cell| {
+            let dashes = cell.trim().trim_matches(':');
+            !dashes.is_empty() && dashes.chars().all(|c| c == '-')
+        })
 }

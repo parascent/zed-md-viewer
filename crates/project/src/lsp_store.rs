@@ -1792,6 +1792,27 @@ impl LocalLspStore {
             })?;
         }
 
+        // Registered transforms (e.g. markdown table normalization) rewrite the
+        // whole buffer, so they only run when formatting targets all of it.
+        if buffer.ranges.is_none() {
+            let transforms =
+                lsp_store.update(cx, |lsp_store, _| lsp_store.buffer_save_transforms.clone())?;
+            if !transforms.is_empty() {
+                zlog::trace!(logger => "applying buffer save transforms");
+                extend_formatting_transaction(buffer, formatting_transaction_id, cx, |buffer, cx| {
+                    let mut edits = Vec::new();
+                    for transform in &transforms {
+                        if let Some(mut transform_edits) = transform(buffer) {
+                            edits.append(&mut transform_edits);
+                        }
+                    }
+                    if !edits.is_empty() {
+                        buffer.edit(edits, None, cx);
+                    }
+                })?;
+            }
+        }
+
         let line_ending_policy = match settings.line_ending {
             LineEndingSetting::Detect => None,
             LineEndingSetting::PreferLf => Some((LineEnding::Unix, true)),
@@ -4596,6 +4617,11 @@ pub struct FormattableBuffer {
     ranges: Option<Vec<Range<Anchor>>>,
 }
 
+/// A rewrite applied to a buffer before it is saved. It returns byte-range
+/// edits, or `None` when the buffer needs no changes.
+pub type BufferSaveTransform =
+    Arc<dyn Fn(&Buffer) -> Option<Vec<(Range<usize>, String)>> + Send + Sync>;
+
 pub struct RemoteLspStore {
     upstream_client: Option<AnyProtoClient>,
     upstream_project_id: u64,
@@ -4634,6 +4660,7 @@ pub struct LspStore {
     lsp_data: HashMap<BufferId, BufferLspData>,
     buffer_reload_tasks: HashMap<BufferId, Task<anyhow::Result<()>>>,
     next_hint_id: Arc<AtomicUsize>,
+    buffer_save_transforms: Vec<BufferSaveTransform>,
 }
 
 #[derive(Debug)]
@@ -4922,6 +4949,11 @@ impl LspStore {
         }
     }
 
+    /// Registers a rewrite that runs on every save, before the file is written.
+    pub fn register_buffer_save_transform(&mut self, transform: BufferSaveTransform) {
+        self.buffer_save_transforms.push(transform);
+    }
+
     pub fn as_local_mut(&mut self) -> Option<&mut LocalLspStore> {
         match &mut self.mode {
             LspStoreMode::Local(local_lsp_store) => Some(local_lsp_store),
@@ -5039,6 +5071,7 @@ impl LspStore {
             lsp_data: HashMap::default(),
             buffer_reload_tasks: HashMap::default(),
             next_hint_id: Arc::default(),
+            buffer_save_transforms: Vec::new(),
             active_entry: None,
             _maintain_workspace_config,
             _maintain_buffer_languages: Self::maintain_buffer_languages(languages, cx),
@@ -5106,6 +5139,7 @@ impl LspStore {
             next_hint_id: Arc::default(),
             lsp_data: HashMap::default(),
             buffer_reload_tasks: HashMap::default(),
+            buffer_save_transforms: Vec::new(),
             active_entry: None,
 
             _maintain_workspace_config,

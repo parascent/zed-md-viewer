@@ -922,6 +922,20 @@ pub mod preview {
     }
 }
 
+pub mod table {
+    use gpui::actions;
+
+    actions!(
+        markdown,
+        [
+            /// Opens a spreadsheet-style editor for the markdown table at the cursor.
+            EditTable,
+            /// Inserts a 2x2 markdown table at the cursor and opens the table editor on it.
+            NewTable,
+        ]
+    );
+}
+
 pub mod agents_sidebar {
     use gpui::{Action, actions};
     use schemars::JsonSchema;

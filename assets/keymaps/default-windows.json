@@ -595,6 +595,8 @@
     "bindings": {
       "ctrl-k v": "markdown::OpenPreviewToTheSide",
       "ctrl-shift-v": "markdown::OpenPreview",
+      "ctrl-alt-t": "markdown::EditTable",
+      "ctrl-alt-shift-t": "markdown::NewTable",
     },
   },
   {
