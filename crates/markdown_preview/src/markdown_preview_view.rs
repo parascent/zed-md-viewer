@@ -152,9 +152,9 @@ impl MarkdownPreviewView {
                 {
                     return;
                 }
-                if !MarkdownPreviewSettings::get_global(cx).open_markdown_files_in_preview
-                    || workspace.is_restoring()
-                {
+                // Restored items are previewed too: this fork opens a single
+                // file per window, so every launch starts in viewing mode.
+                if !MarkdownPreviewSettings::get_global(cx).open_markdown_files_in_preview {
                     return;
                 }
                 let Some(editor) = item.downcast::<Editor>() else {
@@ -4332,7 +4332,7 @@ mod tests {
     }
 
     #[gpui::test]
-    async fn workspace_restore_does_not_auto_preview_markdown(cx: &mut TestAppContext) {
+    async fn workspace_restore_auto_previews_markdown(cx: &mut TestAppContext) {
         let (project, workspace, multi_workspace) = markdown_workspace(
             cx,
             json!({
@@ -4345,21 +4345,15 @@ mod tests {
         cx.update(|cx| set_auto_preview_enabled(cx, true));
         workspace.update(cx, |workspace, _| workspace.set_restoring_workspace(true));
 
+        // This fork shows a single file per window, so a restored file also
+        // starts in the preview.
         let restored_editor =
             open_project_file(cx, &project, &multi_workspace, "restored.md", None, true)
                 .await
                 .downcast::<Editor>()
                 .unwrap();
         cx.update(|cx| {
-            let workspace = workspace.read(cx);
-            assert_eq!(
-                workspace.active_item_as::<Editor>(cx),
-                Some(restored_editor)
-            );
-            assert_eq!(
-                workspace.items_of_type::<MarkdownPreviewView>(cx).count(),
-                0
-            );
+            assert_editor_replaced_by_preview(workspace.read(cx), &restored_editor, cx);
         });
 
         workspace.update(cx, |workspace, _| workspace.set_restoring_workspace(false));

@@ -1,48 +1,76 @@
-# Zed
+# zed-md-viewer
 
-[![Zed](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/zed-industries/zed/main/assets/badge/v0.json)](https://zed.dev)
-[![CI](https://github.com/zed-industries/zed/actions/workflows/run_tests.yml/badge.svg)](https://github.com/zed-industries/zed/actions/workflows/run_tests.yml)
+A personal fork of [Zed](https://github.com/zed-industries/zed) reduced to a
+single-file Markdown editor: one file per window, Vim keybindings, and a
+rendered preview that opens by default.
 
-Welcome to Zed, a high-performance, multiplayer code editor from the creators of [Atom](https://github.com/atom/atom) and [Tree-sitter](https://github.com/tree-sitter/tree-sitter).
+## What it does
 
----
+- **One file per window.** No tabs, splits, side panels, project panel, AI, or
+  telemetry. Launching another file replaces the current one.
+- **Starts in viewing mode.** Markdown files open as the rendered preview.
+  `ctrl-shift-v` toggles between the preview and the raw editor (macOS:
+  `cmd-shift-v`).
+- **Table editor.** With the cursor in a table, `ctrl-alt-t` opens a
+  spreadsheet-style modal (`cmd-alt-t` on macOS): click row numbers or column
+  letters to insert/delete, add rows and columns, then Apply. `ctrl-alt-shift-t`
+  inserts a new 2x2 table and opens it.
+- **Tables format on save.** Every table in a Markdown buffer is normalized
+  before the file is written: ragged rows are padded with the missing cells,
+  columns are aligned, and the delimiter row is rebuilt at matching width. Pipe
+  style and indentation (tables nested in list items) are preserved; fenced code
+  blocks and tables with over-wide rows are left untouched. Formatting is
+  idempotent and needs no configuration.
+- **Centered reading layout** with margins that shrink with the window; toggle
+  with `alt-z`.
 
-### Installation
+## Install (Linux, user-local)
 
-On macOS, Linux, and Windows you can [download Zed directly](https://zed.dev/download) or install Zed via your local package manager ([macOS](https://zed.dev/docs/installation#macos)/[Linux](https://zed.dev/docs/linux#installing-via-a-package-manager)/[Windows](https://zed.dev/docs/windows#package-managers)).
+```sh
+cargo build --release -p zed
+install -m 755 target/release/zed-md-viewer ~/.local/bin/zed-md-viewer
 
-Other platforms are not yet available:
+sed "s|@BIN@|$HOME/.local/bin/zed-md-viewer|g" \
+  crates/zed/resources/zed-md-viewer.desktop \
+  > ~/.local/share/applications/zed-md-viewer.desktop
+update-desktop-database ~/.local/share/applications
+```
 
-- Web ([tracking discussion](https://github.com/zed-industries/zed/discussions/26195))
+The desktop entry claims Markdown only
+(`MimeType=text/markdown;text/x-markdown;`), so it is offered as a handler for
+`.md`, `.markdown` and `.mkd` files and never for other text files. Use
+`xdg-mime default zed-md-viewer.desktop text/markdown` to make it the default
+handler if it is not already.
 
-### Developing Zed
+Settings live in `~/.config/zed-md-viewer/settings.json`; data (database, logs)
+in `~/.local/share/zed-md-viewer/`.
 
-- [Building Zed for macOS](./docs/src/development/macos.md)
-- [Building Zed for Linux](./docs/src/development/linux.md)
-- [Building Zed for Windows](./docs/src/development/windows.md)
+## Development
 
-### Contributing
+```sh
+./dev.sh            # debug build + the test fixture
+./dev.sh notes.md   # debug build + your file(s)
+./dev.sh --release  # release build
+```
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for ways you can contribute to Zed.
+Debug builds read `assets/settings/*` and `assets/keymaps/*` from the checkout at
+runtime, so settings and keymap edits apply on relaunch without rebuilding.
 
-Also... we're hiring! Check out our [jobs](https://zed.dev/jobs) page for open roles.
+Run the crate's tests with `cargo test -p markdown_table_editor`. Some upstream
+`markdown_preview` tests fail by design in this fork because they exercise tabs
+and split panes, which have been removed.
 
-### Licensing
+## Key bindings
 
-Zed source code is licensed primarily under GPL-3.0-or-later, with Apache-2.0 components where marked.
+| Action | Linux / Windows | macOS |
+| --- | --- | --- |
+| Return to editor / reopen preview | `ctrl-shift-v` | `cmd-shift-v` |
+| Edit table at cursor | `ctrl-alt-t` | `cmd-alt-t` |
+| Insert new table | `ctrl-alt-shift-t` | `cmd-alt-shift-t` |
+| Toggle centered layout | `alt-z` | `alt-z` |
 
-License information for third party dependencies must be correctly provided for CI to pass.
+## Licensing
 
-We use [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) to automatically comply with open source licenses. If CI is failing, check the following:
-
-- Is it showing a `no license specified` error for a crate you've created? If so, add `publish = false` under `[package]` in your crate's Cargo.toml.
-- Is the error `failed to satisfy license requirements` for a dependency? If so, first determine what license the project has and whether this system is sufficient to comply with this license's requirements. If you're unsure, ask a lawyer. Once you've verified that this system is acceptable add the license's SPDX identifier to the `accepted` array in `script/licenses/zed-licenses.toml`.
-- Is `cargo-about` unable to find the license for a dependency? If so, add a clarification field at the end of `script/licenses/zed-licenses.toml`, as specified in the [cargo-about book](https://embarkstudios.github.io/cargo-about/cli/generate/config.html#crate-configuration).
-
-## Sponsorship
-
-Zed is developed by **Zed Industries, Inc.**, a for-profit company.
-
-If you’d like to financially support the project, you can do so via GitHub Sponsors.
-Sponsorships go directly to Zed Industries and are used as general company revenue.
-There are no perks or entitlements associated with sponsorship.
+Zed is licensed under the GNU General Public License v3.0 or later; third-party
+components carry their own licenses. See [LICENSE-GPL](LICENSE-GPL) and
+[LICENSE-APACHE](LICENSE-APACHE).
