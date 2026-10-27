@@ -32,7 +32,8 @@ use theme::{SystemAppearance, Theme, ThemeRegistry};
 use theme_settings::ThemeSettings;
 use ui::utils::WithRemSize;
 use ui::{
-    ContextMenu, LinkPreview, ScrollAxes, Scrollbars, WithScrollbar, prelude::*, right_click_menu,
+    ContextMenu, LinkPreview, ScrollAxes, Scrollbars, Tooltip, WithScrollbar, prelude::*,
+    right_click_menu,
 };
 use util::{
     ResultExt,
@@ -2022,6 +2023,20 @@ impl Render for MarkdownPreviewView {
                     .tracked_scroll_handle(&self.scroll_handle),
                 window,
                 cx,
+            )
+            .child(
+                div().absolute().top_2().right_2().child(
+                    IconButton::new("close-markdown-preview", IconName::Close)
+                        .icon_size(IconSize::Small)
+                        .style(ButtonStyle::Subtle)
+                        .tooltip(Tooltip::for_action_title(
+                            "Show Source",
+                            &CloseAndReturnToEditor,
+                        ))
+                        .on_click(cx.listener(|view, _, window, cx| {
+                            view.close_and_return_to_editor(&CloseAndReturnToEditor, window, cx);
+                        })),
+                ),
             )
             .when_some(hovered_url, |this, hovered_url| {
                 this.child(

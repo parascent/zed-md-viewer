@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=zed-md-viewer
+GenericName=Markdown Editor
+Comment=Single-file Markdown editor
+TryExec=@BIN@
+StartupNotify=true
+Exec=@BIN@ %F
+Icon=zed-md-viewer
+Categories=Utility;TextEditor;
+Keywords=markdown;md;viewer;editor;
+MimeType=text/markdown;text/x-markdown;
+StartupWMClass=dev.zed.zed-md-viewer
+Terminal=false

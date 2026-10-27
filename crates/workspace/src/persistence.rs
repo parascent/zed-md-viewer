@@ -1065,6 +1065,10 @@ impl Domain for WorkspaceDb {
         sql!(
             ALTER TABLE workspaces ADD COLUMN native_window_state BLOB;
         ),
+        // Default existing workspaces into the narrow centered layout.
+        sql!(
+            UPDATE workspaces SET centered_layout = 1;
+        ),
     ];
 
     // Allow recovering from bad migration that was initially shipped to nightly

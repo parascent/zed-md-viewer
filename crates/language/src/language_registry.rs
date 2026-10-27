@@ -3,9 +3,9 @@ use crate::{
     CachedLspAdapter, File, Language, LanguageConfig, LanguageId, LanguageMatcher,
     LanguageServerName, LspAdapter, ManifestName, PLAIN_TEXT, ToolchainLister,
     available_languages::AvailableLanguages, language_settings::all_language_settings,
-    task_context::ContextProvider, with_parser,
+    task_context::ContextProvider,
 };
-use anyhow::{Context as _, Result, anyhow};
+use anyhow::{Result, anyhow};
 use collections::{FxHashMap, HashMap, HashSet, hash_map};
 pub use language_core::{
     BinaryStatus, LanguageName, LanguageQueries, LanguageServerStatusUpdate, QueryFile,
@@ -26,14 +26,13 @@ use postage::watch;
 use smallvec::SmallVec;
 
 use std::{
-    ffi::OsStr,
     path::{Path, PathBuf},
     sync::Arc,
 };
 use text::Rope;
 use theme::Theme;
 
-use util::{maybe, post_inc};
+use util::post_inc;
 
 pub struct LanguageRegistry {
     state: RwLock<LanguageRegistryState>,
@@ -126,13 +125,6 @@ pub struct FakeLanguageServerEntry {
 
 enum AvailableGrammar {
     Native(tree_sitter::Language),
-    Loaded(#[allow(unused)] PathBuf, tree_sitter::Language),
-    Loading(
-        #[allow(unused)] PathBuf,
-        Vec<oneshot::Sender<Result<tree_sitter::Language, Arc<anyhow::Error>>>>,
-    ),
-    Unloaded(PathBuf),
-    LoadFailed(Arc<anyhow::Error>),
 }
 
 #[derive(Debug)]
@@ -548,29 +540,6 @@ impl LanguageRegistry {
         );
     }
 
-    /// Adds paths to WASM grammar files, which can be loaded if needed.
-    pub fn register_wasm_grammars(&self, grammars: Vec<(Arc<str>, PathBuf)>) {
-        if grammars.is_empty() {
-            return;
-        }
-
-        let mut state = self.state.write();
-        for (name, path) in grammars {
-            if let Some(AvailableGrammar::Native(_)) = state.grammars.get(&name) {
-                log::warn!(
-                    "not registering extension grammar {name}: a native grammar with this name is already registered"
-                );
-                continue;
-            }
-            state
-                .grammars
-                .insert(name, AvailableGrammar::Unloaded(path));
-        }
-        state.version += 1;
-        state.reload_count += 1;
-        *state.subscription.0.borrow_mut() = ();
-    }
-
     pub fn language_settings(&self) -> AllLanguageSettingsContent {
         self.state.read().language_settings.clone()
     }
@@ -932,66 +901,15 @@ impl LanguageRegistry {
         self: &Arc<Self>,
         name: Arc<str>,
     ) -> impl Future<Output = Result<tree_sitter::Language>> {
-        let span = ztracing::debug_span!("get_or_load_grammar", name = &*name.clone());
-        let _enter = span.enter();
-        let (tx, rx) = oneshot::channel();
-        let mut state = self.state.write();
+        let grammar = self
+            .state
+            .read()
+            .grammars
+            .get(name.as_ref())
+            .map(|AvailableGrammar::Native(grammar)| grammar.clone())
+            .ok_or_else(|| anyhow!("no such grammar {name}"));
 
-        if let Some(grammar) = state.grammars.get_mut(name.as_ref()) {
-            match grammar {
-                AvailableGrammar::LoadFailed(error) => {
-                    tx.send(Err(error.clone())).ok();
-                }
-                AvailableGrammar::Native(grammar) | AvailableGrammar::Loaded(_, grammar) => {
-                    tx.send(Ok(grammar.clone())).ok();
-                }
-                AvailableGrammar::Loading(_, txs) => {
-                    txs.push(tx);
-                }
-                AvailableGrammar::Unloaded(wasm_path) => {
-                    log::trace!("start loading grammar {name:?}");
-                    let this = self.clone();
-                    let wasm_path = wasm_path.clone();
-                    *grammar = AvailableGrammar::Loading(wasm_path.clone(), vec![tx]);
-                    self.executor
-                        .spawn(async move {
-                            let grammar_result = maybe!({
-                                let wasm_bytes = std::fs::read(&wasm_path)?;
-                                let grammar_name = wasm_path
-                                    .file_stem()
-                                    .and_then(OsStr::to_str)
-                                    .context("invalid grammar filename")?;
-                                anyhow::Ok(with_parser(|parser| {
-                                    let mut store = parser.take_wasm_store().unwrap();
-                                    let grammar = store.load_language(grammar_name, &wasm_bytes);
-                                    parser.set_wasm_store(store).unwrap();
-                                    grammar
-                                })?)
-                            })
-                            .map_err(Arc::new);
-
-                            let value = match &grammar_result {
-                                Ok(grammar) => AvailableGrammar::Loaded(wasm_path, grammar.clone()),
-                                Err(error) => AvailableGrammar::LoadFailed(error.clone()),
-                            };
-
-                            log::trace!("finish loading grammar {name:?}");
-                            let old_value = this.state.write().grammars.insert(name, value);
-                            if let Some(AvailableGrammar::Loading(_, txs)) = old_value {
-                                for tx in txs {
-                                    tx.send(grammar_result.clone()).ok();
-                                }
-                            }
-                        })
-                        .detach();
-                }
-            }
-        } else {
-            tx.send(Err(Arc::new(anyhow!("no such grammar {name}"))))
-                .ok();
-        }
-
-        async move { rx.await?.map_err(|e| anyhow!(e)) }
+        async move { grammar }
     }
 
     pub fn to_vec(&self) -> Vec<Arc<Language>> {

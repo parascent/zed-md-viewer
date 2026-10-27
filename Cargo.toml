@@ -73,7 +73,6 @@ members = [
     "crates/explorer_command_injector",
     "crates/extension",
     "crates/extension_api",
-    "crates/extension_cli",
     "crates/extension_host",
     "crates/extension_suggest",
     "crates/extensions_ui",
@@ -1143,12 +1142,10 @@ ui_input = { codegen-units = 1 }
 zed_actions = { codegen-units = 1 }
 
 [profile.release]
-debug = "limited"
-lto = "thin"
+debug = false
+lto = "fat"
 codegen-units = 1
-
-[profile.release.package]
-zed = { codegen-units = 16 }
+strip = true
 
 [profile.release-fast]
 inherits = "release"

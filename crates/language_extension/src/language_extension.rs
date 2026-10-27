@@ -41,7 +41,9 @@ struct LanguageServerRegistryProxy {
 impl ExtensionGrammarProxy for LanguageServerRegistryProxy {
     #[ztracing::instrument(skip_all)]
     fn register_grammars(&self, grammars: Vec<(Arc<str>, PathBuf)>) {
-        self.language_registry.register_wasm_grammars(grammars)
+        for (name, path) in grammars {
+            log::warn!("ignoring wasm grammar {name} at {path:?}: wasm grammars are not supported");
+        }
     }
 }
 

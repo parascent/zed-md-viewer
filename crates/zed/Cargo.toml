@@ -6,7 +6,12 @@ version = "1.27.0"
 publish.workspace = true
 license = "GPL-3.0-or-later"
 authors = ["Zed Team <hi@zed.dev>"]
-default-run = "zed"
+default-run = "zed-md-viewer"
+autobins = false
+
+[[bin]]
+name = "zed-md-viewer"
+path = "src/main.rs"
 
 [lints]
 workspace = true
@@ -55,10 +60,6 @@ visual-tests = [
 ]
 
 [[bin]]
-name = "zed"
-path = "src/main.rs"
-
-[[bin]]
 name = "zed_visual_test_runner"
 path = "src/visual_test_runner.rs"
 required-features = ["visual-tests"]
@@ -93,6 +94,7 @@ codestral.workspace = true
 collab_ui.workspace = true
 collections.workspace = true
 command_palette.workspace = true
+command_palette_hooks.workspace = true
 component_preview.workspace = true
 copilot.workspace = true
 copilot_chat.workspace = true
@@ -109,10 +111,7 @@ editor.workspace = true
 encoding_selector.workspace = true
 env_logger = { workspace = true, optional = true }
 extension.workspace = true
-extension_host.workspace = true
-extensions_ui.workspace = true
 feature_flags.workspace = true
-feedback.workspace = true
 file_finder.workspace = true
 fs.workspace = true
 futures.workspace = true
@@ -149,7 +148,6 @@ journal.workspace = true
 json_schema_store.workspace = true
 keymap_editor.workspace = true
 language.workspace = true
-language_extension.workspace = true
 language_model.workspace = true
 language_models.workspace = true
 language_onboarding.workspace = true

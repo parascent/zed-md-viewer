@@ -2581,29 +2581,11 @@ impl Pane {
 
     pub fn split(
         &mut self,
-        direction: SplitDirection,
-        mode: SplitMode,
-        window: &mut Window,
-        cx: &mut Context<Self>,
+        _direction: SplitDirection,
+        _mode: SplitMode,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
     ) {
-        if self.items.len() <= 1 && mode == SplitMode::MovePane {
-            // MovePane with only one pane present behaves like a SplitEmpty in the opposite direction
-            let active_item = self.active_item();
-            cx.emit(Event::Split {
-                direction: direction.opposite(),
-                mode: SplitMode::EmptyPane,
-            });
-            // ensure that we focus the moved pane
-            // in this case we know that the window is the same as the active_item
-            if let Some(active_item) = active_item {
-                cx.defer_in(window, move |_, window, cx| {
-                    let focus_handle = active_item.item_focus_handle(cx);
-                    window.focus(&focus_handle, cx);
-                });
-            }
-        } else {
-            cx.emit(Event::Split { direction, mode });
-        }
     }
 
     pub fn toolbar(&self) -> &Entity<Toolbar> {

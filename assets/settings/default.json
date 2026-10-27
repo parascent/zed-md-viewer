@@ -103,10 +103,10 @@
   "centered_layout": {
     // The relative width of the left padding of the central pane from the
     // workspace when the centered layout is used.
-    "left_padding": 0.2,
+    "left_padding": 0.3,
     // The relative width of the right padding of the central pane from the
     // workspace when the centered layout is used.
-    "right_padding": 0.2,
+    "right_padding": 0.3,
   },
   // Image viewer settings
   "image_viewer": {
@@ -141,7 +141,7 @@
   //    "cmd_or_ctrl" (alias: "cmd", "ctrl")
   "multi_cursor_modifier": "alt",
   // Whether to enable vim modes and key bindings.
-  "vim_mode": false,
+  "vim_mode": true,
   // Whether to enable helix mode and key bindings.
   // Enabling this mode will automatically enable vim mode.
   "helix_mode": false,
@@ -1172,7 +1172,7 @@
     // in the prompt when generating git commit messages.
     "commit_message_include_project_rules": true,
     // Whether the agent is enabled.
-    "enabled": true,
+    "enabled": false,
     // Whether to show the agent panel button in the status bar.
     "button": true,
     // Where to dock the agent panel. Can be 'left', 'right' or 'bottom'.
@@ -1470,11 +1470,11 @@
   //     "autosave": { "after_delay": {"milliseconds": 500} },
   "autosave": "off",
   // Maximum number of tabs per pane. Unset for unlimited.
-  "max_tabs": null,
+  "max_tabs": 1,
   // Settings related to the editor's tab bar.
   "tab_bar": {
     // Whether or not to show the tab bar in the editor
-    "show": true,
+    "show": false,
     // Whether or not to show the navigation history buttons.
     "show_nav_history_buttons": true,
     // Whether or not to show the tab bar buttons.
@@ -1717,20 +1717,20 @@
   // Control what info is collected by Zed.
   "telemetry": {
     // Send debug info like crash reports.
-    "diagnostics": true,
+    "diagnostics": false,
     // Send anonymized usage data like what languages you're using Zed with.
-    "metrics": true,
+    "metrics": false,
     // Allow sending requests to Anthropic models that cannot be offered with
     // Zero Data Retention
     "anthropic_retention": false,
   },
   // Whether to disable all AI features in Zed.
   //
-  // Default: false
-  "disable_ai": false,
+  // Default: true
+  "disable_ai": true,
   // Automatically update Zed. This setting may be ignored on Linux if
   // installed through a package manager.
-  "auto_update": true,
+  "auto_update": false,
   // How to render LSP `textDocument/documentColor` colors in the editor.
   //
   // Possible values:
@@ -1829,7 +1829,7 @@
     // Global switch to enable or disable all git integration features.
     // If set to true, disables all git integration features.
     // If set to false, individual git integration features below will be independently enabled or disabled.
-    "disable_git": false,
+    "disable_git": true,
     // Whether to enable git status tracking.
     "enable_status": true,
     // Whether to enable git diff display.

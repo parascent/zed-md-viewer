@@ -1,21 +1,12 @@
 use crate::{
-    Copy, CopyAndTrim, CopyPermalinkToLine, Cut, DisplayPoint, DisplaySnapshot, Editor,
-    EvaluateSelectedText, FindAllReferences, GoToDeclaration, GoToDefinition, GoToImplementation,
-    GoToTypeDefinition, Paste, Rename, RevealInFileManager, RunToCursor, SelectMode,
-    SelectionEffects, SelectionExt, ToDisplayPoint, ToggleCodeActions,
-    actions::{Format, FormatSelections},
+    Copy, CopyAndTrim, Cut, DisplayPoint, DisplaySnapshot, Editor, Paste, RevealInFileManager,
+    SelectMode, SelectionEffects, SelectionExt, ToDisplayPoint,
     selections_collection::SelectionsCollection,
 };
 use gpui::prelude::FluentBuilder;
 use gpui::{Context, DismissEvent, Entity, Focusable as _, Pixels, Point, Subscription, Window};
-use project::DisableAiSettings;
 use std::ops::Range;
-use text::PointUtf16;
-use workspace::OpenInTerminal;
-use zed_actions::agent::AddSelectionToThread;
-use zed_actions::preview::{
-    markdown::OpenPreview as OpenMarkdownPreview, svg::OpenPreview as OpenSvgPreview,
-};
+use zed_actions::preview::markdown::OpenPreview as OpenMarkdownPreview;
 
 #[derive(Debug)]
 pub enum MenuPosition {
@@ -182,9 +173,9 @@ pub fn deploy_context_menu(
         }
 
         // Don't show the context menu if there isn't a project associated with this editor
-        let Some(project) = editor.project.clone() else {
+        if editor.project.is_none() {
             return;
-        };
+        }
 
         let snapshot = editor.snapshot(window, cx);
         let display_map = editor.display_snapshot(cx);
@@ -200,30 +191,6 @@ pub fn deploy_context_menu(
 
         let focus = window.focused(cx);
         let has_reveal_target = editor.target_file(cx).is_some();
-        let has_selections = editor
-            .selections
-            .all::<PointUtf16>(&display_map)
-            .into_iter()
-            .any(|s| !s.is_empty());
-        let has_git_repo =
-            buffer
-                .anchor_to_buffer_anchor(anchor)
-                .is_some_and(|(buffer_anchor, _)| {
-                    project
-                        .read(cx)
-                        .git_store()
-                        .read(cx)
-                        .repository_and_path_for_buffer_id(buffer_anchor.buffer_id, cx)
-                        .is_some()
-                });
-
-        let evaluate_selection = window.is_action_available(&EvaluateSelectedText, cx);
-        let run_to_cursor = window.is_action_available(&RunToCursor, cx);
-        let format_selections = window.is_action_available(&FormatSelections, cx);
-        let disable_ai = DisableAiSettings::is_ai_disabled_for_buffer(
-            editor.buffer.read(cx).as_singleton().as_ref(),
-            cx,
-        );
 
         let is_markdown = editor
             .buffer()
@@ -232,69 +199,9 @@ pub fn deploy_context_menu(
             .and_then(|buffer| buffer.read(cx).language())
             .is_some_and(|language| language.name().as_ref() == "Markdown");
 
-        let is_svg = editor
-            .buffer()
-            .read(cx)
-            .as_singleton()
-            .and_then(|buffer| buffer.read(cx).file())
-            .is_some_and(|file| {
-                std::path::Path::new(file.file_name(cx))
-                    .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
-            });
-
         ui::ContextMenu::build(window, cx, |menu, _window, _cx| {
             let builder = menu
                 .on_blur_subscription(Subscription::new(|| {}))
-                .when(run_to_cursor, |builder| {
-                    builder.action("Run to Cursor", Box::new(RunToCursor))
-                })
-                .when(evaluate_selection && has_selections, |builder| {
-                    builder.action("Evaluate Selection", Box::new(EvaluateSelectedText))
-                })
-                .when(
-                    run_to_cursor || (evaluate_selection && has_selections),
-                    |builder| builder.separator(),
-                )
-                .action("Go to Definition", Box::new(GoToDefinition::default()))
-                .action("Go to Declaration", Box::new(GoToDeclaration::default()))
-                .action(
-                    "Go to Type Definition",
-                    Box::new(GoToTypeDefinition::default()),
-                )
-                .action(
-                    "Go to Implementation",
-                    Box::new(GoToImplementation::default()),
-                )
-                .action(
-                    "Find All References",
-                    Box::new(FindAllReferences::default()),
-                )
-                .action(
-                    "Show Incoming Calls",
-                    Box::new(zed_actions::ShowIncomingCalls),
-                )
-                .action(
-                    "Show Outgoing Calls",
-                    Box::new(zed_actions::ShowOutgoingCalls),
-                )
-                .separator()
-                .action("Rename Symbol", Box::new(Rename))
-                .action("Format Buffer", Box::new(Format))
-                .when(format_selections, |cx| {
-                    cx.action("Format Selections", Box::new(FormatSelections))
-                })
-                .action(
-                    "Show Code Actions",
-                    Box::new(ToggleCodeActions {
-                        deployed_from: None,
-                        quick_launch: false,
-                    }),
-                )
-                .when(!disable_ai && has_selections, |this| {
-                    this.action("Add to Agent Thread", Box::new(AddSelectionToThread))
-                })
-                .separator()
                 .action("Cut", Box::new(Cut))
                 .action("Copy", Box::new(Copy))
                 .action("Copy and Trim", Box::new(CopyAndTrim))
@@ -307,25 +214,7 @@ pub fn deploy_context_menu(
                 )
                 .when(is_markdown, |builder| {
                     builder.action("Open Markdown Preview", Box::new(OpenMarkdownPreview))
-                })
-                .when(is_svg, |builder| {
-                    builder.action("Open SVG Preview", Box::new(OpenSvgPreview))
-                })
-                .action_disabled_when(
-                    !has_reveal_target,
-                    "Open in Terminal",
-                    Box::new(OpenInTerminal),
-                )
-                .action_disabled_when(
-                    !has_git_repo,
-                    "Copy Permalink to Line",
-                    Box::new(CopyPermalinkToLine),
-                )
-                .action_disabled_when(
-                    !has_git_repo,
-                    "View File History",
-                    Box::new(git::FileHistory),
-                );
+                });
             match focus {
                 Some(focus) => builder.context(focus),
                 None => builder,

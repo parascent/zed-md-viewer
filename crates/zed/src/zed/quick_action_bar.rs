@@ -1,5 +1,4 @@
 mod preview;
-mod repl_menu;
 
 use agent_settings::AgentSettings;
 use editor::actions::{
@@ -28,7 +27,8 @@ use ui::{
 use vim_mode_setting::{HelixModeSetting, VimModeSetting};
 use workspace::item::ItemBufferKind;
 use workspace::{
-    ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView, Workspace, item::ItemHandle,
+    ToggleCenteredLayout, ToolbarItemEvent, ToolbarItemLocation, ToolbarItemView, Workspace,
+    item::ItemHandle,
 };
 use zed_actions::{agent::AddSelectionToThread, assistant::InlineAssist, outline::ToggleOutline};
 
@@ -37,6 +37,7 @@ const MAX_CODE_ACTION_MENU_LINES: u32 = 16;
 pub struct QuickActionBar {
     _inlay_hints_enabled_subscription: Option<Subscription>,
     _ai_settings_subscription: Subscription,
+    _workspace_subscription: Option<Subscription>,
     active_item: Option<Box<dyn ItemHandle>>,
     buffer_search_bar: Entity<BufferSearchBar>,
     show: bool,
@@ -65,9 +66,15 @@ impl QuickActionBar {
             }
         });
 
+        let workspace_subscription = workspace
+            .weak_handle()
+            .upgrade()
+            .map(|workspace| cx.observe(&workspace, |_, _, cx| cx.notify()));
+
         let mut this = Self {
             _inlay_hints_enabled_subscription: None,
             _ai_settings_subscription: ai_settings_subscription,
+            _workspace_subscription: workspace_subscription,
             active_item: None,
             buffer_search_bar,
             show: true,
@@ -140,6 +147,22 @@ impl Render for QuickActionBar {
         let has_available_code_actions = editor_value.has_available_code_actions_for_selection();
         let code_action_enabled = editor_value.code_actions_enabled_for_toolbar(cx);
         let focus_handle = editor_value.focus_handle(cx);
+
+        let centered_layout = self
+            .workspace
+            .upgrade()
+            .is_some_and(|workspace| workspace.read(cx).centered_layout);
+        let narrow_view_button = QuickActionBarButton::new(
+            "toggle narrow view",
+            IconName::Minimize,
+            centered_layout,
+            Box::new(ToggleCenteredLayout),
+            focus_handle.clone(),
+            "Narrow View",
+            |_, window, cx| {
+                window.dispatch_action(Box::new(ToggleCenteredLayout), cx);
+            },
+        );
 
         let search_button = (editor.buffer_kind(cx) == ItemBufferKind::Singleton).then(|| {
             QuickActionBarButton::new(
@@ -706,8 +729,8 @@ impl Render for QuickActionBar {
         h_flex()
             .id("quick action bar")
             .gap(DynamicSpacing::Base01.rems(cx))
-            .children(self.render_repl_menu(cx))
             .children(self.render_preview_button(cx))
+            .child(narrow_view_button)
             .children(search_button)
             .when(
                 AgentSettings::get_global(cx).enabled(cx) && AgentSettings::get_global(cx).button,

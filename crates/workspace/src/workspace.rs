@@ -104,7 +104,7 @@ use project::{
     git_store::{GitStoreEvent, RepositoryEvent},
     project_settings::ProjectSettings,
     toolchain_store::ToolchainStoreEvent,
-    trusted_worktrees::{RemoteHostLocation, TrustedWorktrees, TrustedWorktreesEvent},
+    trusted_worktrees::{TrustedWorktrees, TrustedWorktreesEvent},
 };
 use release_channel::ReleaseChannel;
 use remote::{
@@ -171,7 +171,6 @@ use crate::{
         SerializedAxis,
         model::{SerializedItem, SerializedPane, SerializedPaneGroup},
     },
-    security_modal::SecurityModal,
 };
 
 pub const SERIALIZATION_THROTTLE_TIME: Duration = Duration::from_millis(200);
@@ -2133,7 +2132,7 @@ impl Workspace {
             workspace_actions: Default::default(),
             // This data will be incorrect, but it will be overwritten by the time it needs to be used.
             bounds: Default::default(),
-            centered_layout: false,
+            centered_layout: true,
             bounds_save_task_queued: None,
             on_prompt_for_new_path: None,
             on_prompt_for_open_path: None,
@@ -2268,7 +2267,7 @@ impl Workspace {
                     let centered_layout = serialized_workspace
                         .as_ref()
                         .map(|w| w.centered_layout)
-                        .unwrap_or(false);
+                        .unwrap_or(true);
 
                     let workspace = window.update(cx, |multi_workspace, window, cx| {
                         let workspace = cx.new(|cx| {
@@ -2330,7 +2329,7 @@ impl Workspace {
                     let centered_layout = serialized_workspace
                         .as_ref()
                         .map(|w| w.centered_layout)
-                        .unwrap_or(false);
+                        .unwrap_or(true);
                     let window = cx.open_window(options, {
                         let app_state = app_state.clone();
                         let project_handle = project_handle.clone();
@@ -2436,15 +2435,6 @@ impl Workspace {
                     })
                     .log_err();
             }
-
-            // Auto-show the security modal if the project has restricted worktrees
-            window
-                .update(cx, |_, window, cx| {
-                    workspace.update(cx, |workspace, cx| {
-                        workspace.show_worktree_trust_security_modal(false, window, cx);
-                    });
-                })
-                .log_err();
 
             Ok(OpenResult {
                 window,
@@ -6313,15 +6303,11 @@ impl Workspace {
     pub fn split_pane(
         &mut self,
         pane_to_split: Entity<Pane>,
-        split_direction: SplitDirection,
-        window: &mut Window,
-        cx: &mut Context<Self>,
+        _split_direction: SplitDirection,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
     ) -> Entity<Pane> {
-        let new_pane = self.add_pane(window, cx);
-        self.center
-            .split(&pane_to_split, &new_pane, split_direction, cx);
-        cx.notify();
-        new_pane
+        pane_to_split
     }
 
     pub fn split_and_move(
@@ -8734,6 +8720,9 @@ impl Workspace {
         self.maximized_pane.is_some()
     }
 
+    /// Below this window width the centered layout margins collapse entirely.
+    const MIN_CENTERED_CONTENT_WIDTH: f32 = 500.;
+
     fn adjust_padding(padding: Option<f32>) -> f32 {
         padding
             .unwrap_or(CenteredPaddingSettings::default().0)
@@ -8741,6 +8730,14 @@ impl Workspace {
                 CenteredPaddingSettings::MIN_PADDING,
                 CenteredPaddingSettings::MAX_PADDING,
             )
+    }
+
+    /// Shrinks the centered layout margins as the window narrows, so content keeps
+    /// at least `MIN_CENTERED_CONTENT_WIDTH` and the margins drop entirely when it
+    /// cannot.
+    fn centered_padding(content_width: f32, padding: f32) -> f32 {
+        let max_padding = (1. - Self::MIN_CENTERED_CONTENT_WIDTH / content_width) / 2.;
+        padding.min(max_padding).max(0.)
     }
 
     fn render_dock(
@@ -9163,50 +9160,15 @@ impl Workspace {
         });
     }
 
+    /// This fork never asks about worktree trust: worktrees stay untrusted, so
+    /// the features Restricted Mode gates (project settings, language servers,
+    /// MCP integrations) remain permanently off for this Markdown viewer.
     pub fn show_worktree_trust_security_modal(
         &mut self,
-        toggle: bool,
-        window: &mut Window,
-        cx: &mut Context<Self>,
+        _toggle: bool,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
     ) {
-        if let Some(security_modal) = self.active_modal::<SecurityModal>(cx) {
-            if toggle {
-                security_modal.update(cx, |security_modal, cx| {
-                    security_modal.dismiss(cx);
-                })
-            } else {
-                security_modal.update(cx, |security_modal, cx| {
-                    security_modal.refresh_restricted_paths(cx);
-                });
-            }
-        } else {
-            let has_restricted_worktrees = TrustedWorktrees::has_restricted_worktrees(
-                &self.project().read(cx).worktree_store(),
-                cx,
-            );
-            if has_restricted_worktrees {
-                let project = self.project().read(cx);
-                let remote_host = project
-                    .remote_connection_options(cx)
-                    .map(RemoteHostLocation::from);
-                let worktree_store = project.worktree_store().downgrade();
-                let home_dir_task = if project.is_local() {
-                    Task::ready(std::env::home_dir())
-                } else {
-                    let resolve_task = project.resolve_abs_path("~", cx);
-                    cx.spawn(async |_, _| {
-                        let resolved_path = resolve_task
-                            .await
-                            .and_then(|path| path.into_abs_path())
-                            .map(PathBuf::from);
-                        resolved_path
-                    })
-                };
-                self.toggle_modal(window, cx, |window, cx| {
-                    SecurityModal::new(worktree_store, remote_host, home_dir_task, window, cx)
-                });
-            }
-        }
     }
 }
 
@@ -9682,6 +9644,7 @@ impl Render for Workspace {
             && self.active_item(cx).is_some();
         let pad_zoomed_pane =
             self.centered_layout && self.zoomed.is_some() && self.zoomed_position.is_none();
+        let centered_content_width = window.viewport_size().width.as_f32();
         let render_padding = |size| {
             (size > 0.0).then(|| {
                 div()
@@ -9698,11 +9661,13 @@ impl Render for Workspace {
 
             let settings = WorkspaceSettings::get_global(cx).centered_layout;
             (
-                render_padding(Self::adjust_padding(
-                    settings.left_padding.map(|padding| padding.0),
+                render_padding(Self::centered_padding(
+                    centered_content_width,
+                    Self::adjust_padding(settings.left_padding.map(|padding| padding.0)),
                 )),
-                render_padding(Self::adjust_padding(
-                    settings.right_padding.map(|padding| padding.0),
+                render_padding(Self::centered_padding(
+                    centered_content_width,
+                    Self::adjust_padding(settings.right_padding.map(|padding| padding.0)),
                 )),
             )
         };

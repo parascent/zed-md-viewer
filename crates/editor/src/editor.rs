@@ -77,6 +77,14 @@ mod rewrap;
 mod selection;
 
 pub(crate) use actions::*;
+pub use actions::{
+    AcceptEditPrediction, AcceptNextLineEditPrediction, AcceptNextWordEditPrediction, BlameHover,
+    DebuggerHoverCollapseSelected, DebuggerHoverExpandSelected, DebuggerHoverSelectNext,
+    DebuggerHoverSelectPrevious, EditLogBreakpoint, ExpandAllDiffHunks, GoToDefinitionSplit,
+    GoToHunk, GoToNextChange, GoToPreviousChange, GoToPreviousHunk, GoToTypeDefinitionSplit,
+    NextEditPrediction, OpenExcerptsSplit, PreviousEditPrediction, ShowEditPrediction,
+    ToggleBreakpoint, ToggleEditPrediction, ToggleSelectedDiffHunks,
+};
 pub use clipboard::ClipboardSelection;
 pub use code_actions::CodeActionProvider;
 use collections::TypeIdHashMap;

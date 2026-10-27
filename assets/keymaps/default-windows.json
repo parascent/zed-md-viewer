@@ -33,7 +33,6 @@
       "ctrl-alt-,": "zed::OpenSettingsFile",
       "ctrl-q": "zed::Quit",
       "f4": "debugger::Start",
-      "ctrl-shift-i": "edit_prediction::ToggleMenu",
       "shift-alt-l": "lsp_tool::ToggleMenu",
       "ctrl-shift-alt-c": "editor::DisplayCursorNames",
       "ctrl-shift-alt-s": "workspace::ToggleWorktreeSecurity",
@@ -173,14 +172,6 @@
     "use_key_equivalents": true,
     "bindings": {
       "ctrl-c": "markdown::Copy",
-    },
-  },
-  {
-    "context": "Editor && jupyter",
-    "use_key_equivalents": true,
-    "bindings": {
-      "ctrl-shift-enter": "repl::Run",
-      "ctrl-alt-enter": "repl::RunInPlace",
     },
   },
   {
@@ -635,6 +626,7 @@
     "use_key_equivalents": true,
     "bindings": {
       "alt-/": "which_key::ShowPendingBindings",
+      "alt-z": "workspace::ToggleCenteredLayout",
       // Move focus between the major regions of the window (editor, open
       // panels, status bar). Accessibility navigation; mirrors VS Code's
       // "Focus Next/Previous Part". `ctrl-f6` mirrors `f6` so region navigation
@@ -702,9 +694,6 @@
       "ctrl-shift-d": "debug_panel::ToggleFocus",
       "ctrl-shift-/": "agent::ToggleFocus",
       "ctrl-k s": "workspace::SaveAll",
-      "ctrl-k n": "encoding_selector::Toggle",
-      "ctrl-k m": "language_selector::Toggle",
-      "ctrl-m ctrl-m": "toolchain::AddToolchain",
       "escape": "workspace::Unfollow",
       "ctrl-k ctrl-left": "workspace::ActivatePaneLeft",
       "ctrl-k ctrl-right": "workspace::ActivatePaneRight",
@@ -1268,7 +1257,6 @@
     "context": "LspCommandSelector > Picker > Editor",
     "use_key_equivalents": true,
     "bindings": {
-      "tab": "lsp_command_selector::ToggleArgumentsFocus",
     },
   },
   {
@@ -1282,7 +1270,6 @@
     "context": "ToolchainSelector",
     "use_key_equivalents": true,
     "bindings": {
-      "ctrl-shift-a": "toolchain::AddToolchain",
     },
   },
   {
@@ -1542,24 +1529,8 @@
     "bindings": {
       "ctrl-w": "workspace::CloseWindow",
       "escape": "workspace::CloseWindow",
-      "ctrl-m": "settings_editor::Minimize",
       "ctrl-f": "search::FocusSearch",
-      "ctrl-,": "settings_editor::OpenCurrentFile",
-      "left": "settings_editor::ToggleFocusNav",
-      "ctrl-shift-e": "settings_editor::ToggleFocusNav",
       // todo(settings_ui): cut this down based on the max files and overflow UI
-      "ctrl-1": ["settings_editor::FocusFile", 0],
-      "ctrl-2": ["settings_editor::FocusFile", 1],
-      "ctrl-3": ["settings_editor::FocusFile", 2],
-      "ctrl-4": ["settings_editor::FocusFile", 3],
-      "ctrl-5": ["settings_editor::FocusFile", 4],
-      "ctrl-6": ["settings_editor::FocusFile", 5],
-      "ctrl-7": ["settings_editor::FocusFile", 6],
-      "ctrl-8": ["settings_editor::FocusFile", 7],
-      "ctrl-9": ["settings_editor::FocusFile", 8],
-      "ctrl-0": ["settings_editor::FocusFile", 9],
-      "ctrl-pageup": "settings_editor::FocusPreviousFile",
-      "ctrl-pagedown": "settings_editor::FocusNextFile",
     },
   },
   {
@@ -1575,23 +1546,11 @@
     "context": "SettingsWindow > NavigationMenu",
     "use_key_equivalents": true,
     "bindings": {
-      "up": "settings_editor::FocusPreviousNavEntry",
-      "shift-tab": "settings_editor::FocusPreviousNavEntry",
-      "down": "settings_editor::FocusNextNavEntry",
-      "tab": "settings_editor::FocusNextNavEntry",
-      "right": "settings_editor::ExpandNavEntry",
-      "left": "settings_editor::CollapseNavEntry",
-      "pageup": "settings_editor::FocusPreviousRootNavEntry",
-      "pagedown": "settings_editor::FocusNextRootNavEntry",
-      "home": "settings_editor::FocusFirstNavEntry",
-      "end": "settings_editor::FocusLastNavEntry",
     },
   },
   {
     "context": "EditPredictionContext > Editor",
     "bindings": {
-      "alt-left": "dev::EditPredictionContextGoBack",
-      "alt-right": "dev::EditPredictionContextGoForward",
     },
   },
   {
@@ -1697,9 +1656,6 @@
     "use_key_equivalents": true,
     "bindings": {
       "ctrl-w": "workspace::CloseWindow",
-      "ctrl-enter": "skill_creator::SaveSkill",
-      "tab": "skill_creator::FocusNextField",
-      "shift-tab": "skill_creator::FocusPreviousField",
     },
   },
   {
@@ -1707,9 +1663,6 @@
     "use_key_equivalents": true,
     "bindings": {
       "ctrl-w": "workspace::CloseWindow",
-      "ctrl-enter": "skill_creator::SaveSkill",
-      "tab": "skill_creator::FocusNextField",
-      "shift-tab": "skill_creator::FocusPreviousField",
     },
   },
   {

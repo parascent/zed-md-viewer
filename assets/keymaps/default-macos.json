@@ -38,8 +38,6 @@
       "cmd-h": "zed::Hide",
       "alt-cmd-h": "zed::HideOthers",
       "cmd-m": "zed::Minimize",
-      "ctrl-cmd-z": "edit_prediction::RatePredictions",
-      "ctrl-cmd-i": "edit_prediction::ToggleMenu",
       "ctrl-cmd-l": "lsp_tool::ToggleMenu",
       "ctrl-cmd-c": "editor::DisplayCursorNames",
       "ctrl-cmd-s": "workspace::ToggleWorktreeSecurity",
@@ -208,14 +206,6 @@
     "use_key_equivalents": true,
     "bindings": {
       "cmd-c": "markdown::Copy",
-    },
-  },
-  {
-    "context": "Editor && jupyter",
-    "use_key_equivalents": true,
-    "bindings": {
-      "ctrl-shift-enter": "repl::Run",
-      "ctrl-alt-enter": "repl::RunInPlace",
     },
   },
   {
@@ -697,6 +687,7 @@
     "use_key_equivalents": true,
     "bindings": {
       "alt-/": "which_key::ShowPendingBindings",
+      "alt-z": "workspace::ToggleCenteredLayout",
       // Move focus between the major regions of the window (editor, open
       // panels, status bar). Accessibility navigation; mirrors VS Code's
       // "Focus Next/Previous Part". `cmd-f6` mirrors `f6` so region navigation
@@ -764,9 +755,6 @@
       "cmd-shift-d": "debug_panel::ToggleFocus",
       "cmd-?": "agent::ToggleFocus",
       "cmd-alt-s": "workspace::SaveAll",
-      "cmd-k n": "encoding_selector::Toggle",
-      "cmd-k m": "language_selector::Toggle",
-      "cmd-k cmd-m": "toolchain::AddToolchain",
       "escape": "workspace::Unfollow",
       "cmd-k cmd-left": "workspace::ActivatePaneLeft",
       "cmd-k cmd-right": "workspace::ActivatePaneRight",
@@ -1312,7 +1300,6 @@
     "context": "LspCommandSelector > Picker > Editor",
     "use_key_equivalents": true,
     "bindings": {
-      "tab": "lsp_command_selector::ToggleArgumentsFocus",
     },
   },
   {
@@ -1326,7 +1313,6 @@
     "context": "ToolchainSelector",
     "use_key_equivalents": true,
     "bindings": {
-      "cmd-shift-a": "toolchain::AddToolchain",
     },
   },
   {
@@ -1618,24 +1604,8 @@
     "bindings": {
       "cmd-w": "workspace::CloseWindow",
       "escape": "workspace::CloseWindow",
-      "cmd-m": "settings_editor::Minimize",
       "cmd-f": "search::FocusSearch",
-      "cmd-,": "settings_editor::OpenCurrentFile",
-      "left": "settings_editor::ToggleFocusNav",
-      "cmd-shift-e": "settings_editor::ToggleFocusNav",
       // todo(settings_ui): cut this down based on the max files and overflow UI
-      "ctrl-1": ["settings_editor::FocusFile", 0],
-      "ctrl-2": ["settings_editor::FocusFile", 1],
-      "ctrl-3": ["settings_editor::FocusFile", 2],
-      "ctrl-4": ["settings_editor::FocusFile", 3],
-      "ctrl-5": ["settings_editor::FocusFile", 4],
-      "ctrl-6": ["settings_editor::FocusFile", 5],
-      "ctrl-7": ["settings_editor::FocusFile", 6],
-      "ctrl-8": ["settings_editor::FocusFile", 7],
-      "ctrl-9": ["settings_editor::FocusFile", 8],
-      "ctrl-0": ["settings_editor::FocusFile", 9],
-      "cmd-{": "settings_editor::FocusPreviousFile",
-      "cmd-}": "settings_editor::FocusNextFile",
     },
   },
   {
@@ -1651,23 +1621,11 @@
     "context": "SettingsWindow > NavigationMenu",
     "use_key_equivalents": true,
     "bindings": {
-      "up": "settings_editor::FocusPreviousNavEntry",
-      "shift-tab": "settings_editor::FocusPreviousNavEntry",
-      "down": "settings_editor::FocusNextNavEntry",
-      "tab": "settings_editor::FocusNextNavEntry",
-      "right": "settings_editor::ExpandNavEntry",
-      "left": "settings_editor::CollapseNavEntry",
-      "pageup": "settings_editor::FocusPreviousRootNavEntry",
-      "pagedown": "settings_editor::FocusNextRootNavEntry",
-      "home": "settings_editor::FocusFirstNavEntry",
-      "end": "settings_editor::FocusLastNavEntry",
     },
   },
   {
     "context": "EditPredictionContext > Editor",
     "bindings": {
-      "alt-left": "dev::EditPredictionContextGoBack",
-      "alt-right": "dev::EditPredictionContextGoForward",
     },
   },
   {
@@ -1776,9 +1734,6 @@
     "use_key_equivalents": true,
     "bindings": {
       "cmd-w": "workspace::CloseWindow",
-      "cmd-enter": "skill_creator::SaveSkill",
-      "tab": "skill_creator::FocusNextField",
-      "shift-tab": "skill_creator::FocusPreviousField",
     },
   },
   {
@@ -1786,9 +1741,6 @@
     "use_key_equivalents": true,
     "bindings": {
       "cmd-w": "workspace::CloseWindow",
-      "cmd-enter": "skill_creator::SaveSkill",
-      "tab": "skill_creator::FocusNextField",
-      "shift-tab": "skill_creator::FocusPreviousField",
     },
   },
   {

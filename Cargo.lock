@@ -188,7 +188,6 @@ dependencies = [
  "anyhow",
  "auto_update",
  "editor",
- "extension_host",
  "fs",
  "futures 0.3.34",
  "gpui",
@@ -480,7 +479,6 @@ dependencies = [
  "editor",
  "eval_utils",
  "extension",
- "extension_host",
  "feature_flags",
  "file_icons",
  "fs",
@@ -6092,35 +6090,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "extension_cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "cloud_api_types",
- "env_logger 0.11.8",
- "extension",
- "fs",
- "futures 0.3.34",
- "gpui_platform",
- "http_client",
- "language",
- "log",
- "reqwest_client",
- "serde_json",
- "serde_json_lenient",
- "settings_content",
- "snippet_provider",
- "task",
- "theme_settings",
- "thiserror 2.0.17",
- "tokio",
- "toml 0.9.8",
- "tree-sitter",
- "wasmtime",
-]
-
-[[package]]
 name = "extension_host"
 version = "0.1.0"
 dependencies = [
@@ -6193,7 +6162,6 @@ dependencies = [
  "db",
  "editor",
  "extension",
- "extension_host",
  "extension_suggest",
  "fs",
  "fuzzy",
@@ -6323,7 +6291,6 @@ name = "feedback"
 version = "0.1.0"
 dependencies = [
  "client",
- "extension_host",
  "gpui",
  "system_specs",
  "urlencoding",
@@ -9671,7 +9638,6 @@ dependencies = [
  "db",
  "deepseek",
  "extension",
- "extension_host",
  "feature_flags",
  "fs",
  "futures 0.3.34",
@@ -14868,7 +14834,6 @@ dependencies = [
  "dev_container",
  "editor",
  "extension",
- "extension_host",
  "fs",
  "futures 0.3.34",
  "fuzzy_nucleo",
@@ -16552,7 +16517,6 @@ dependencies = [
  "edit_prediction_ui",
  "editor",
  "extension",
- "extension_host",
  "feature_flags",
  "fs",
  "futures 0.3.34",
@@ -22563,6 +22527,7 @@ dependencies = [
  "collab_ui",
  "collections",
  "command_palette",
+ "command_palette_hooks",
  "component_preview",
  "copilot",
  "copilot_chat",
@@ -22582,10 +22547,7 @@ dependencies = [
  "env_logger 0.11.8",
  "etw_tracing",
  "extension",
- "extension_host",
- "extensions_ui",
  "feature_flags",
- "feedback",
  "file_finder",
  "fs",
  "futures 0.3.34",
@@ -22609,7 +22571,6 @@ dependencies = [
  "json_schema_store",
  "keymap_editor",
  "language",
- "language_extension",
  "language_model",
  "language_models",
  "language_onboarding",

@@ -352,64 +352,6 @@ impl Render for TitleBar {
                 .into_any_element(),
         );
 
-        children.push(self.render_collaborator_list(window, cx).into_any_element());
-
-        if title_bar_settings.show_onboarding_banner {
-            if let Some(banner) = &self.banner {
-                children.push(banner.clone().into_any_element())
-            }
-        }
-
-        let status = self.client.status();
-        let status = &*status.borrow();
-        let user = self.user_store.read(cx).current_user();
-        let is_signing_in = user.is_none()
-            && matches!(
-                status,
-                client::Status::Authenticating
-                    | client::Status::Authenticated
-                    | client::Status::Connecting
-            );
-        let is_signed_out_or_auth_error = user.is_none()
-            && matches!(
-                status,
-                client::Status::SignedOut | client::Status::AuthenticationError
-            );
-
-        children.push(
-            h_flex()
-                .pr_1()
-                .gap_1()
-                .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
-                .child(self.render_call_controls(window, cx))
-                .children(self.render_connection_status(status, cx))
-                .child(self.update_version.clone())
-                .when(
-                    user.is_none()
-                        && is_signed_out_or_auth_error
-                        && TitleBarSettings::get_global(cx).show_sign_in,
-                    |this| this.child(self.render_sign_in_button(cx)),
-                )
-                .when(is_signing_in, |this| {
-                    this.child(
-                        Label::new("Signing in…")
-                            .size(LabelSize::Small)
-                            .color(Color::Muted)
-                            .with_animation(
-                                "signing-in",
-                                Animation::new(Duration::from_secs(2))
-                                    .repeat()
-                                    .with_easing(pulsating_between(0.4, 0.8)),
-                                |label, delta| label.alpha(delta),
-                            ),
-                    )
-                })
-                .when(TitleBarSettings::get_global(cx).show_user_menu, |this| {
-                    this.child(self.render_user_menu_button(cx))
-                })
-                .into_any_element(),
-        );
-
         if show_menus {
             self.platform_titlebar.update(cx, |this, _| {
                 this.set_button_layout(button_layout);
@@ -460,7 +402,6 @@ impl TitleBar {
         let git_store = project.read(cx).git_store().clone();
         let user_store = workspace.app_state().user_store.clone();
         let client = workspace.app_state().client.clone();
-        let active_call = ActiveCall::global(cx);
 
         let platform_style = PlatformStyle::platform();
         let application_menu = match platform_style {
@@ -483,16 +424,13 @@ impl TitleBar {
             }),
         );
 
-        subscriptions.push(cx.observe(&active_call, |this, _, cx| this.active_call_changed(cx)));
-        subscriptions.push(
-            cx.subscribe(&git_store, move |_, _, event, cx| match event {
-                GitStoreEvent::ActiveRepositoryChanged(_)
-                | GitStoreEvent::RepositoryUpdated(_, _, true) => {
-                    cx.notify();
-                }
-                _ => {}
-            }),
-        );
+        subscriptions.push(cx.subscribe(&git_store, move |_, _, event, cx| match event {
+            GitStoreEvent::ActiveRepositoryChanged(_)
+            | GitStoreEvent::RepositoryUpdated(_, _, true) => {
+                cx.notify();
+            }
+            _ => {}
+        }));
         subscriptions.push(cx.observe(&user_store, |_a, _, cx| cx.notify()));
         if let Some(workspace_entity) = workspace.weak_handle().upgrade() {
             subscriptions.push(cx.subscribe(
@@ -536,8 +474,6 @@ impl TitleBar {
             screen_share_popover_handle: PopoverMenuHandle::default(),
             _diagnostics_subscription: None,
         };
-
-        this.observe_diagnostics(cx);
 
         this
     }
@@ -703,46 +639,10 @@ impl TitleBar {
         )
     }
 
-    pub fn render_restricted_mode(&self, cx: &mut Context<Self>) -> Option<AnyElement> {
-        let has_restricted_worktrees =
-            TrustedWorktrees::has_restricted_worktrees(&self.project.read(cx).worktree_store(), cx);
-        if !has_restricted_worktrees {
-            return None;
-        }
-
-        let button = Button::new("restricted_mode_trigger", "Restricted Mode")
-            .style(ButtonStyle::Tinted(TintColor::Warning))
-            .label_size(LabelSize::Small)
-            .color(Color::Warning)
-            .start_icon(
-                Icon::new(IconName::Warning)
-                    .size(IconSize::Small)
-                    .color(Color::Warning),
-            )
-            .tooltip(|_, cx| {
-                Tooltip::with_meta(
-                    "You're in Restricted Mode",
-                    Some(&ToggleWorktreeSecurity),
-                    "Mark this project as trusted and unlock all features",
-                    cx,
-                )
-            })
-            .on_click({
-                cx.listener(move |this, _, window, cx| {
-                    this.workspace
-                        .update(cx, |workspace, cx| {
-                            workspace.show_worktree_trust_security_modal(true, window, cx)
-                        })
-                        .log_err();
-                })
-            });
-
-        if ui::utils::MACOS_SDK_26_OR_LATER {
-            // Make up for Tahoe's traffic light buttons having less spacing around them
-            Some(div().child(button).ml_0p5().into_any_element())
-        } else {
-            Some(button.into_any_element())
-        }
+    /// This fork never prompts for worktree trust (worktrees stay untrusted),
+    /// so the title bar never shows the Restricted Mode badge.
+    pub fn render_restricted_mode(&self, _cx: &mut Context<Self>) -> Option<AnyElement> {
+        None
     }
 
     pub fn render_project_host(&self, cx: &mut Context<Self>) -> Option<AnyElement> {
